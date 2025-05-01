@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Événements - Mon Site{% endblock %}
+{% block content %}
+  <h2 class="mb-4">Événements</h2>
+  <table class="table table-striped">
+    <thead class="table-dark" >
+      <tr>
+        <th>Titre</th>
+        <th>Date</th>
+        <th>Lieu</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event in events %}
+      <tr>
+        <td>{{ event.titre }}</td>
+        <td>{{ event.date }}</td>
+        <td>{{ event.lieu }}</td>
+        <td>{{ event.description }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

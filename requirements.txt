@@ -1,0 +1,12 @@
+flask 
+flask-caching 
+azure-storage-blob 
+pyyaml 
+requests
+flask-cors
+faker
+pytest
+flask-testing
+azure-identity
+azure-storage-blob
+

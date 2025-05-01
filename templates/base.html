@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Events & News{% endblock %}</title>
+  <!-- Inclusion de Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  {% block css %}{% endblock %}
+</head>
+<body class="bg-light">
+  <!-- Barre de navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Accueil</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link" href="/events">Événements</a></li>
+          <li class="nav-item"><a class="nav-link" href="/news">Actualités</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Contenu spécifique à chaque page -->
+  <div class="container my-5">
+    {% block content %}{% endblock %}
+  </div>
+  
+  <!-- Pied de page -->
+  <footer class="text-center py-3 bg-dark text-white">
+      &copy; 2025 Mon Site. Tous droits réservés.
+  </footer>
+  
+  <!-- Inclusion de Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  {% block js %}{% endblock %}
+</body>
+</html>

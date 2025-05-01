@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flask-config
+data:
+  AZURE_STORAGE_URL: "https://storageflask.blob.core.windows.net/contenu-statique/"
+  AZURE_SAS_TOKEN: "sp=rw&st=2025-04-01T21:02:35Z&se=2026-04-02T05:02:35Z&sv=2024-11-04&sr=c&sig=R%2FQ7GYytfXwhAIxwySMrecQpdfeYF04reQh2mTCLZbA%3D"

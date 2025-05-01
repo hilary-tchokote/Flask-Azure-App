@@ -1,0 +1,102 @@
+stages:
+  - test
+  - build
+  - deploy
+
+pytest:
+  stage: test
+  before_script:
+    - apt-get update
+    - apt-get install -y python3 python3-pip python3-venv
+    - python3 -m venv ~/venv
+    - source ~/venv/bin/activate
+    - pip install -r requirements.txt
+  script: 
+    - echo "Running tests...."
+    - pytest
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: always
+    
+build_flask:
+  stage: build
+  image: docker:20.10.16 # Cette image contient le client Docker
+  services:
+    - name: docker:dind # Active Docker-in-Docker
+      alias: dockerdaemon
+  variables:
+    DOCKER_HOST: "tcp://dockerdaemon:2375/" # Connexion au service Docker-in-Docker
+    DOCKER_DRIVER: overlay2 # Utilisation du driver overlay2 pour de meilleures performances
+    DOCKER_TLS_CERTDIR: "" # Désactivation de TLS pour la communication avec Docker-in-Docker
+  before_script:
+    - echo "mydirectory"
+    - ls
+    - echo "Dockerfile"
+    - ls -la docker/Dockerfile.flask
+  script:
+    - cd docker
+    - docker build -f Dockerfile.flask -t flask-app ..
+    - echo "Liste des images Docker après la construction:"
+    - docker images
+    - docker tag flask-app flaskappRegistre.azurecr.io/flask-app:latest
+    - echo "Pushing image to ACR..."
+    - echo "login" | docker login flaskappRegistre.azurecr.io -u flaskappRegistre --password-stdin
+    - docker push flaskappRegistre.azurecr.io/flask-app:latest
+  # rules:
+  #   - if: '$CI_COMMIT_BRANCH == "develop"'
+  #     when: always
+
+deploy:
+  stage: deploy
+  image: docker:20.10.16  # Image de base contenant le client Docker
+  services:
+    - name: docker:dind  # Active Docker-in-Docker
+      alias: dockerdaemon
+  variables:
+    DOCKER_HOST: "tcp://dockerdaemon:2375/"  # Permet au client Docker d'utiliser le service dind
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - echo "=== Vérification de l'environnement de déploiement ==="
+    - ls -la
+    - echo "=== Vérification du Dockerfile dans le dossier docker ==="
+    - ls -la docker/Dockerfile.flask
+    # Installer les dépendances nécessaires pour installer Azure CLI et kubectl sur Alpine
+    - echo "Installation des dépendances système..."
+    - apk add --no-cache curl jq python3 py3-pip curl
+    - apk add --no-cache gcc musl-dev python3-dev libffi-dev
+    - echo "Installation de bash..."
+    - apk add --no-cache bash
+    - echo "Installation de psutil..."
+    - pip install psutil
+    # Installer Azure CLI (note : sur Alpine, l'installation d'Azure CLI peut nécessiter des ajustements ; ici nous utilisons le script officiel)
+    - echo "Installation de l'Azure CLI..."
+    #- curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+    - pip install azure-cli
+    # Installer kubectl
+    - echo "Installation de kubectl..."
+    - curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x kubectl
+    - mv kubectl /usr/local/bin/
+    - echo "Vérification de la connectivité DNS vers l'ACR :"
+    - nslookup flaskappRegistre.azurecr.io
+  script:
+    - echo "=== Déploiement en cours ==="
+    # Connexion au registre ACR et pull de l'image
+    - docker login flaskappRegistre.azurecr.io -u flaskappRegistre -p login
+    - echo "login" | docker login flaskappRegistre.azurecr.io -u flaskappRegistre --password-stdin
+    - docker pull flaskappRegistre.azurecr.io/flask-app:latest
+    # Authentification sur Azure en utilisant vos variables CI/CD
+    - echo "Authentification sur Azure..."
+    - az login --username "$AZURE_USERNAME" --password "$AZURE_PASSWORD" $(test -n "$AZURE_TENANT_ID" && echo "--tenant $AZURE_TENANT_ID")
+    # Récupérer les credentials pour le cluster AKS
+    - echo "Récupération des credentials pour AKS..."
+    - az aks get-credentials --resource-group Flask-Azure-App --name flaskApp-AKS-cluster
+    # Appliquer les manifests Kubernetes
+    - echo "Déploiement sur AKS via kubectl..."
+    - kubectl apply -f kubernetes/deployment.yaml
+  environment:
+    name: Production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
+      when: manual

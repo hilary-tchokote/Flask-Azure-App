@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Actualités</h2>
+  <div class="row">
+    {% for news in news_list %}
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-header bg-dark  text-white">
+            {{ news.titre }}
+          </div>
+          <div class="card-body">
+            <p class="card-text"><em>Par {{ news.auteur }} le {{ news.date }}</em></p>
+            <p class="card-text">{{ news.contenu | truncate(150, True, "...") }}</p>
+            <!-- Vous pouvez ajouter un bouton pour voir plus de détails -->
+            <a href="/news/{{ news.id }}" class="btn btn-primary">Lire plus</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
